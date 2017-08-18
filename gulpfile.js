@@ -1,8 +1,11 @@
 'use strict';
 
 const gulp = require('gulp');
-const through2 = require('through2').obj;
-const File = require('vinyl');
+const eslint = require('gulp-eslint');
+const through2 = require('through2');
+const fs = require('fs');
+// const through2 = require('through2').obj;
+// const File = require('vinyl');
 // const autoprefixer = require('autoprefixer');
 // const debug = require('gulp-debug');
 // const del = require('del');
@@ -19,34 +22,56 @@ const File = require('vinyl');
 // const cached = require('gulp-cached');
 // const newer = require('gulp-newer');
 
-gulp.task('assets', function () {
+gulp.task('lint', function () {
 
-  const mtimes = {};
+  let eslintResults = {};
 
-  return gulp.src('frontend/assets/**/*.*')
-	.pipe(through2(
-	  function (file, enc, callback) {
-		mtimes[file.relative] = file.stat.mtime;
-		callback(null, file);
-	  }
-	))
-	.pipe(gulp.dest('public'))
-	.pipe(through2(
-	  function (file, enc, callback) {
-		callback();
-	  },
-	  function (callback) {
-		let manifest = new File({
-		  contents: new Buffer(JSON.stringify(mtimes)),
-		  base: process.cwd(),
-		  path: process.cwd() + '/manifest.json'
-		});
-		this.push(manifest);
-		callback();
-	  }
-	))
-	.pipe(gulp.dest('.'));
+  let cacheFilePath = process.cwd() + '/tmp/lintCache.json';
+
+  return gulp.src('frontend/**/*.js')
+	.pipe(eslint())
+	.pipe(through2(function (file, enc, callback) {
+	  eslintResults[file.path] = {
+	    eslint: file.eslint,
+		mtime: file.stat.mtime
+	  };
+	  callback(null, file);
+	}, function (callback) {
+	  	fs.writeFileSync(cacheFilePath, JSON.stringify(eslintResults));
+	  	callback();
+	  }))
+	.pipe(eslint.format())
+	.pipe(eslint.failAfterError())
 });
+
+// gulp.task('assets', function () {
+//
+//   const mtimes = {};
+//
+//   return gulp.src('frontend/assets/**/*.*')
+// 	.pipe(through2(
+// 	  function (file, enc, callback) {
+// 		mtimes[file.relative] = file.stat.mtime;
+// 		callback(null, file);
+// 	  }
+// 	))
+// 	.pipe(gulp.dest('public'))
+// 	.pipe(through2(
+// 	  function (file, enc, callback) {
+// 		callback();
+// 	  },
+// 	  function (callback) {
+// 		let manifest = new File({
+// 		  contents: new Buffer(JSON.stringify(mtimes)),
+// 		  base: process.cwd(),
+// 		  path: process.cwd() + '/manifest.json'
+// 		});
+// 		this.push(manifest);
+// 		callback();
+// 	  }
+// 	))
+// 	.pipe(gulp.dest('.'));
+// });
 
 // const isDevelopment = !process.env.NODE_ENV || process.env.NODE_ENV == 'development';
 
