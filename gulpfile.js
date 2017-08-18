@@ -21,7 +21,8 @@ const isDevelopment = !process.env.NODE_ENV || process.env.NODE_ENV == 'developm
 
 gulp.task('styles', function () {
 
-  return gulp.src('frontend/styles/main.styl')
+  return multipipe(
+	gulp.src('frontend/styles/main.styl'),
 	  // .pipe(plumber({
 		// errorHandler: notify.onError(function (err) {
 		//   return {
@@ -30,10 +31,11 @@ gulp.task('styles', function () {
 		//   };
 		// })
 	  // }))
-	  .pipe(gulpIf(isDevelopment, sourcemaps.init()))
-  	  .pipe(stylus())
-  	  .pipe(gulpIf(isDevelopment, sourcemaps.write()))
-  	  .pipe(gulp.dest('public'));
+	gulpIf(isDevelopment, sourcemaps.init()),
+	stylus(),
+	gulpIf(isDevelopment, sourcemaps.write()),
+	gulp.dest('public')
+  ).on('error', notify.onError());
 
 	// return gulp.src('frontend/styles/**/*.css')
 	//   .pipe(cached('styles'))
